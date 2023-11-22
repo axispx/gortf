@@ -58,3 +58,17 @@ func TestParseIgnoreGroup(t *testing.T) {
 		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", 0, len(parser.tokens))
 	}
 }
+
+func TestRTFToText(t *testing.T) {
+	content := `{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard Voici du texte en {\b gras}.\par}`
+
+	parser := NewRtfParser()
+	doc, _ := parser.ParseContent(content)
+	text, _ := doc.ToText()
+
+	expected := "Voici du texte en gras."
+
+	if text != expected {
+		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", expected, text)
+	}
+}

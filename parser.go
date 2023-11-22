@@ -52,6 +52,19 @@ func (r *RtfDocument) popFromBody() StyleBlock {
 	return element
 }
 
+func (r *RtfDocument) ToText() (string, error) {
+	var sb strings.Builder
+
+	for _, b := range r.Body {
+		_, err := sb.WriteString(b.Text)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return sb.String(), nil
+}
+
 type RtfParser struct {
 	tokens       []token
 	painterStack []*Painter
