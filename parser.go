@@ -2,6 +2,7 @@ package gortf
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -65,8 +66,18 @@ func NewRtfParser() RtfParser {
 	}
 }
 
-func (r *RtfParser) ParseFile(filePath string) error {
-	return nil
+func (r *RtfParser) ParseFile(filePath string) (RtfDocument, error) {
+	buf, err := os.ReadFile(filePath)
+	if err != nil {
+		return RtfDocument{}, err
+	}
+
+	doc, err := r.ParseContent(string(buf))
+	if err != nil {
+		return RtfDocument{}, err
+	}
+
+	return doc, nil
 }
 
 func (r *RtfParser) ParseContent(content string) (RtfDocument, error) {

@@ -14,6 +14,7 @@ const (
 	tokenTypeText
 	tokenTypeControlWord
 	tokenTypeCRLF
+	tokenTypeIgnorableDestination
 )
 
 type controlWordType int
@@ -101,6 +102,36 @@ func newGroupEndToken() groupEndToken {
 	return groupEndToken{}
 }
 
+type crlfToken struct {
+}
+
+func (c crlfToken) tokenType() tokenType {
+	return tokenTypeCRLF
+}
+
+func (c crlfToken) String() string {
+	return "{CRLF}"
+}
+
+func newCrlfToken() crlfToken {
+	return crlfToken{}
+}
+
+type ignorableDestination struct {
+}
+
+func (i ignorableDestination) tokenType() tokenType {
+	return tokenTypeIgnorableDestination
+}
+
+func (i ignorableDestination) String() string {
+	return "{IgnorableDestination}"
+}
+
+func newIgnorableDestination() ignorableDestination {
+	return ignorableDestination{}
+}
+
 type controlWordToken struct {
 	name            string
 	controlWordType controlWordType
@@ -115,47 +146,48 @@ func (c controlWordToken) String() string {
 	return fmt.Sprintf("{ControlWord %s %s %d}", c.name, c.controlWordType, c.parameter)
 }
 
-func newControlWordToken(input string) controlWordToken {
-	// TODO: implement it better
-	param, idx := extractControlParameterValueAndIndex(input)
-	controlType := getControlTypeFromName(input, idx)
+func newControlWordToken(input string) (controlWordToken, error) {
+	prefix := ""
+	suffix := ""
+	param := -1
+
+	suffixIndex := getSuffixIndex(input)
+	if suffixIndex == -1 {
+		prefix = input
+	} else {
+		prefix = input[:suffixIndex]
+		suffix = input[suffixIndex:]
+
+		p, err := strconv.Atoi(suffix)
+		if err != nil {
+			return controlWordToken{}, err
+		}
+
+		param = p
+	}
+
+	controlType := getControlTypeFromPrefix(prefix)
 
 	return controlWordToken{
-		name:            input,
+		name:            prefix,
 		controlWordType: controlType,
 		parameter:       param,
-	}
+	}, nil
 }
 
-// TODO: handle negative value
-func extractControlParameterValueAndIndex(text string) (int, int) {
-	startIdx := -1
+func getSuffixIndex(text string) int {
+	suffixIndex := -1
 	for idx := range text {
 		if isNumber(text[idx]) || text[idx] == '-' {
-			startIdx = idx
+			suffixIndex = idx
 			break
 		}
 	}
 
-	if startIdx > 0 {
-		n, err := strconv.Atoi(text[startIdx:])
-		if err != nil {
-			panic(err)
-		}
-
-		return n, startIdx
-	}
-
-	return -1, startIdx
+	return suffixIndex
 }
 
-func getControlTypeFromName(name string, suffixIndex int) controlWordType {
-	if suffixIndex < 0 {
-		suffixIndex = len(name)
-	}
-
-	prefix := name[:suffixIndex]
-
+func getControlTypeFromPrefix(prefix string) controlWordType {
 	switch prefix {
 	case `\rtf`:
 		return controlWordTypeRtf

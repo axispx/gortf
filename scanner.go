@@ -1,5 +1,7 @@
 package gortf
 
+import "strings"
+
 type scanner struct {
 	start   int
 	current int
@@ -19,7 +21,6 @@ func newScanner(source string) scanner {
 func (s *scanner) scanTokens() {
 	for !s.isAtEnd() {
 		s.start = s.current
-
 		s.scanToken()
 	}
 }
@@ -30,17 +31,31 @@ func (s *scanner) scanToken() {
 	switch c {
 	case '{':
 		s.addToken(newGroupToken())
+		for s.peek() != '\\' && s.peek() != '{' && s.peek() != '}' {
+			s.advance()
+		}
 
 	case '}':
 		s.addToken(newGroupEndToken())
+
+	case '*':
+		s.addToken(newIgnorableDestination())
 
 	case '\\':
 		pc := s.peek()
 
 		if pc == '\\' || pc == '{' || pc == '}' { // escaped characters
+			// move past the escape character in the current index
+			s.advance()
 
+			for s.peek() != '\\' && s.peek() != '{' && s.peek() != '}' {
+				s.advance()
+			}
+
+			s.addToken(newTextToken(s.source[s.start+1 : s.current]))
 		} else if pc == '\n' { // CRLF
-
+			s.addToken(newCrlfToken())
+			s.advance()
 		} else if isAlphaLower(pc) { // control word
 			for s.peek() != '\\' && s.peek() != '{' && s.peek() != '}' {
 				s.advance()
@@ -49,7 +64,16 @@ func (s *scanner) scanToken() {
 			slice := s.source[s.start:s.current]
 			head, tail := splitAtFirstWhitespace(slice)
 
-			s.addToken(newControlWordToken(head))
+			if strings.HasSuffix(head, ";") {
+				head = strings.TrimSuffix(head, ";")
+			}
+
+			cwt, err := newControlWordToken(head)
+			if err != nil {
+				break
+			}
+
+			s.addToken(cwt)
 
 			if len(tail) > 0 {
 				s.addToken(newTextToken(tail))
