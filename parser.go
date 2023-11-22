@@ -6,15 +6,15 @@ import (
 )
 
 type Painter struct {
-	fontRef   FontRef
-	fontSize  int
-	bold      bool
-	italic    bool
-	underline bool
+	FontRef   FontRef
+	FontSize  int
+	Bold      bool
+	Italic    bool
+	Underline bool
 }
 
 func (p Painter) String() string {
-	return fmt.Sprintf("Painter: {fr: %d, fs: %d, b: %v, i: %v, u: %v}", p.fontRef, p.fontSize, p.bold, p.italic, p.underline)
+	return fmt.Sprintf("Painter: {fr: %d, fs: %d, b: %v, i: %v, u: %v}", p.FontRef, p.FontSize, p.Bold, p.Italic, p.Underline)
 }
 
 type StyleBlock struct {
@@ -101,13 +101,13 @@ func (r *RtfParser) parse() (RtfDocument, error) {
 
 			switch controlWord.controlWordType {
 			case controlWordTypeFontNumber:
-				currentPainter.fontRef = FontRef(controlWord.parameter)
+				currentPainter.FontRef = FontRef(controlWord.parameter)
 			case controlWordTypeBold:
-				currentPainter.bold = true
+				currentPainter.Bold = true
 			case controlWordTypeItalic:
-				currentPainter.italic = true
+				currentPainter.Italic = true
 			case controlWordTypeUnderline:
-				currentPainter.underline = true
+				currentPainter.Underline = true
 			}
 
 		case tokenTypeText:
