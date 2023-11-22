@@ -47,3 +47,14 @@ func TestRTFParser(t *testing.T) {
 		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", expected, doc)
 	}
 }
+
+func TestParseIgnoreGroup(t *testing.T) {
+	content := `{\*\expandedcolortbl;;}`
+
+	parser := NewRtfParser()
+	parser.ParseContent(content)
+
+	if len(parser.tokens) != 0 {
+		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", 0, len(parser.tokens))
+	}
+}
