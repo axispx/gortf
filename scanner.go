@@ -30,8 +30,10 @@ func (s *scanner) scanToken() {
 	switch c {
 	case '{':
 		s.addToken(newGroupToken())
+
 	case '}':
 		s.addToken(newGroupEndToken())
+
 	case '\\':
 		pc := s.peek()
 
@@ -52,6 +54,16 @@ func (s *scanner) scanToken() {
 			if len(tail) > 0 {
 				s.addToken(newTextToken(tail))
 			}
+		}
+
+	default:
+		for s.peek() != '\\' && s.peek() != '{' && s.peek() != '}' {
+			s.advance()
+		}
+		slice := s.source[s.start:s.current]
+
+		if slice != "" {
+			s.addToken(newTextToken(slice))
 		}
 	}
 }

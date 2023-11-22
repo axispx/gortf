@@ -13,6 +13,7 @@ const (
 	tokenTypeGroupEnd
 	tokenTypeText
 	tokenTypeControlWord
+	tokenTypeCRLF
 )
 
 type controlWordType int
