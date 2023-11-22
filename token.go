@@ -57,28 +57,24 @@ type token interface {
 }
 
 type binaryToken struct {
-	tokType tokenType
-	value   []byte
+	value []byte
 }
 
 func (b binaryToken) tokenType() tokenType {
-	return b.tokType
+	return tokenTypeText
 }
 
 func NewBinaryToken(value []byte) binaryToken {
 	return binaryToken{
-		tokType: tokenTypeText,
-		value:   value,
+		value: value,
 	}
 }
 
 type groupToken struct {
-	tokType  tokenType
-	contents []token
 }
 
 func (g groupToken) tokenType() tokenType {
-	return g.tokType
+	return tokenTypeGroup
 }
 
 func (g groupToken) String() string {
@@ -86,24 +82,14 @@ func (g groupToken) String() string {
 }
 
 func newGroupToken() groupToken {
-	return groupToken{
-		tokType: tokenTypeGroup,
-	}
-}
-
-func newGroupTokenWithContents(contents []token) groupToken {
-	return groupToken{
-		tokType:  tokenTypeGroup,
-		contents: contents,
-	}
+	return groupToken{}
 }
 
 type groupEndToken struct {
-	tokType tokenType
 }
 
 func (g groupEndToken) tokenType() tokenType {
-	return g.tokType
+	return tokenTypeGroupEnd
 }
 
 func (g groupEndToken) String() string {
@@ -111,20 +97,17 @@ func (g groupEndToken) String() string {
 }
 
 func newGroupEndToken() groupEndToken {
-	return groupEndToken{
-		tokType: tokenTypeGroupEnd,
-	}
+	return groupEndToken{}
 }
 
 type controlWordToken struct {
-	tokType         tokenType
 	name            string
 	controlWordType controlWordType
 	parameter       int
 }
 
 func (c controlWordToken) tokenType() tokenType {
-	return c.tokType
+	return tokenTypeControlWord
 }
 
 func (c controlWordToken) String() string {
@@ -137,7 +120,6 @@ func newControlWordToken(input string) controlWordToken {
 	controlType := getControlTypeFromName(input, idx)
 
 	return controlWordToken{
-		tokType:         tokenTypeControlWord,
 		name:            input,
 		controlWordType: controlType,
 		parameter:       param,
@@ -196,12 +178,11 @@ func getControlTypeFromName(name string, suffixIndex int) controlWordType {
 }
 
 type textToken struct {
-	tokType tokenType
-	value   string
+	value string
 }
 
 func (t textToken) tokenType() tokenType {
-	return t.tokType
+	return tokenTypeText
 }
 
 func (t textToken) String() string {
@@ -210,7 +191,6 @@ func (t textToken) String() string {
 
 func newTextToken(value string) textToken {
 	return textToken{
-		tokType: tokenTypeText,
-		value:   value,
+		value: value,
 	}
 }
