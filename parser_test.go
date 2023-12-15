@@ -8,7 +8,7 @@ import (
 func TestRTFParser(t *testing.T) {
 	parser := NewRtfParser()
 
-	content := `{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard` + "\n"
+	content := `{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}{\colortbl;\red0\green0\blue0;\red255\green255\blue255;}\f0\pard` + "\n"
 	content += `This is some {\b bold} text.\par` + "\n"
 	content += `}`
 
@@ -23,6 +23,10 @@ func TestRTFParser(t *testing.T) {
 					Charset:    CharacterSetNone,
 					FontFamily: FontFamilySwiss,
 				},
+			},
+			ColorTable: map[ColorRef]Color{
+				1: Color{0, 0, 0},
+				2: Color{255, 255, 255},
 			},
 		},
 		Body: []StyleBlock{

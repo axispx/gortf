@@ -29,6 +29,10 @@ const (
 	controlWordTypeBold
 	controlWordTypeUnderline
 	controlWordTypeUnknown
+	controlWordTypeColorTable
+	controlWordTypeColorRed
+	controlWordTypeColorGreen
+	controlWordTypeColorBlue
 )
 
 func (c controlWordType) String() string {
@@ -49,6 +53,14 @@ func (c controlWordType) String() string {
 		return "b"
 	case controlWordTypeUnderline:
 		return "i"
+	case controlWordTypeColorTable:
+		return "colortbl"
+	case controlWordTypeColorRed:
+		return "red"
+	case controlWordTypeColorGreen:
+		return "green"
+	case controlWordTypeColorBlue:
+		return "blue"
 	default:
 		return "unknown"
 	}
@@ -205,6 +217,14 @@ func getControlTypeFromPrefix(prefix string) controlWordType {
 		return controlWordTypeBold
 	case `\u`:
 		return controlWordTypeUnderline
+	case `\colortbl`:
+		return controlWordTypeColorTable
+	case `\red`:
+		return controlWordTypeColorRed
+	case `\green`:
+		return controlWordTypeColorGreen
+	case `\blue`:
+		return controlWordTypeColorBlue
 	default:
 		return controlWordTypeUnknown
 	}

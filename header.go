@@ -104,14 +104,28 @@ func fontFamilyFromName(name string) FontFamily {
 	}
 }
 
+type Color struct {
+	R int
+	G int
+	B int
+}
+
+func (c Color) valid() bool {
+	return c.R >= 0 && c.G >= 0 && c.B >= 0
+}
+
 type FontRef uint16
 type FontTable map[FontRef]Font
 
+type ColorRef uint16
+type ColorTable map[ColorRef]Color
+
 type RtfHeader struct {
-	Charset   CharacterSet
-	FontTable FontTable
+	Charset    CharacterSet
+	FontTable  FontTable
+	ColorTable ColorTable
 }
 
 func (r RtfHeader) String() string {
-	return fmt.Sprintf("{Charset: %s, FontTable: %v}", r.Charset, r.FontTable)
+	return fmt.Sprintf("{Charset: %s, FontTable: %v, ColorTable: %v}", r.Charset, r.FontTable, r.ColorTable)
 }

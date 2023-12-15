@@ -22,7 +22,7 @@ func TestSimpleTokenization(t *testing.T) {
 }
 
 func TestScanEntireFile(t *testing.T) {
-	scanner := newScanner(`{ \rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard Voici du texte en {\b gras}.\par }`)
+	scanner := newScanner(`{ \rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}{\colortbl;\red0\green0\blue0;}\f0\pard Voici du texte en {\b gras}.\par }`)
 	scanner.scanTokens()
 
 	expected := []token{
@@ -34,6 +34,12 @@ func TestScanEntireFile(t *testing.T) {
 		controlWordToken{`\f`, controlWordTypeFontNumber, 0},
 		controlWordToken{`\fswiss`, controlWordTypeUnknown, -1},
 		textToken{"Helvetica;"},
+		groupEndToken{},
+		groupToken{},
+		controlWordToken{`\colortbl`, controlWordTypeColorTable, -1},
+		controlWordToken{`\red`, controlWordTypeColorRed, 0},
+		controlWordToken{`\green`, controlWordTypeColorGreen, 0},
+		controlWordToken{`\blue`, controlWordTypeColorBlue, 0},
 		groupEndToken{},
 		controlWordToken{`\f`, controlWordTypeFontNumber, 0},
 		controlWordToken{`\pard`, controlWordTypeUnknown, -1},
@@ -115,8 +121,8 @@ func TestShouldParseControlSymbolEndingSemicolon(t *testing.T) {
 
 	expected := []token{
 		groupToken{},
-		controlWordToken{`\red`, controlWordTypeUnknown, 255},
-		controlWordToken{`\blue`, controlWordTypeUnknown, 255},
+		controlWordToken{`\red`, controlWordTypeColorRed, 255},
+		controlWordToken{`\blue`, controlWordTypeColorBlue, 255},
 		groupEndToken{},
 	}
 

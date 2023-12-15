@@ -159,10 +159,24 @@ func (r *RtfParser) parseHeader() RtfHeader {
 
 		if currentToken.tokenType() == tokenTypeGroup && nextToken.tokenType() == tokenTypeControlWord {
 			controlWord := nextToken.(controlWordToken)
+
+			headerTableFound := false
 			if controlWord.controlWordType == controlWordTypeFontTable {
+				headerTableFound = true
 				fontTableTokens := r.consumeTokensUntilMatchingBracket()
 				header.FontTable = r.parseFontTable(fontTableTokens)
-				break
+			} else if controlWord.controlWordType == controlWordTypeColorTable {
+				headerTableFound = true
+				colorTableTokens := r.consumeTokensUntilMatchingBracket()
+				header.ColorTable = r.parseColorTable(colorTableTokens)
+			}
+
+			if headerTableFound {
+				if r.areMoreHeaderTablePresent() {
+					continue
+				} else {
+					break
+				}
 			}
 		}
 
@@ -212,6 +226,54 @@ func (r *RtfParser) parseFontTable(fontTableTokens []token) FontTable {
 	return table
 }
 
+func (r *RtfParser) parseColorTable(colorTableTokens []token) ColorTable {
+	table := make(ColorTable)
+	var currentKey ColorRef = 1
+	var currentColor = Color{-1, -1, -1}
+
+	for _, tkn := range colorTableTokens {
+		switch tkn.tokenType() {
+		case tokenTypeControlWord:
+			controlWord := tkn.(controlWordToken)
+
+			switch controlWord.controlWordType {
+			case controlWordTypeColorRed:
+				currentColor.R = controlWord.parameter
+			case controlWordTypeColorGreen:
+				currentColor.G = controlWord.parameter
+			case controlWordTypeColorBlue:
+				currentColor.B = controlWord.parameter
+			}
+
+			if currentColor.valid() {
+				table[currentKey] = currentColor
+				currentKey += 1
+				currentColor = Color{-1, -1, -1}
+			}
+		}
+	}
+
+	return table
+}
+
+func (r *RtfParser) areMoreHeaderTablePresent() bool {
+	nextToken := r.peek()
+	nextToNextToken := r.peekN(1)
+
+	if nextToken.tokenType() == tokenTypeGroup && nextToNextToken.tokenType() == tokenTypeControlWord {
+		controlWord := nextToNextToken.(controlWordToken)
+
+		switch controlWord.controlWordType {
+		case controlWordTypeFontTable, controlWordTypeColorTable:
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
 func (r *RtfParser) consumeTokensUntilMatchingBracket() []token {
 	tokens := []token{}
 	count := 0
@@ -236,6 +298,8 @@ func (r *RtfParser) consumeTokensUntilMatchingBracket() []token {
 	return tokens
 }
 
+// advance returns the token at the cursor location
+// and removes the token from the list of tokens
 func (r *RtfParser) advance() token {
 	if len(r.tokens) == 0 {
 		panic("no tokens")
@@ -254,6 +318,14 @@ func (r *RtfParser) peek() token {
 	}
 
 	return r.tokens[r.cursor]
+}
+
+func (r *RtfParser) peekN(n int) token {
+	if r.cursor >= len(r.tokens)-n {
+		return nil
+	}
+
+	return r.tokens[r.cursor+n]
 }
 
 func (r *RtfParser) isAtEnd() bool {
