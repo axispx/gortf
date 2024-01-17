@@ -17,18 +17,19 @@ func TestRTFParser(t *testing.T) {
 	expected := RtfDocument{
 		Header: RtfHeader{
 			Charset: CharacterSetAnsi,
-			FontTable: map[FontRef]Font{
+			FontTable: map[TableRef]Font{
 				0: Font{
 					Name:       "Helvetica",
 					Charset:    CharacterSetNone,
 					FontFamily: FontFamilySwiss,
 				},
 			},
-			ColorTable: map[ColorRef]Color{
+			ColorTable: map[TableRef]Color{
 				1: Color{0, 0, 0},
 				2: Color{255, 255, 255},
 			},
 		},
+		InformationGroup: RtfInformationGroup{},
 		Body: []StyleBlock{
 			StyleBlock{
 				Painter: Painter{},
@@ -64,7 +65,7 @@ func TestParseIgnoreGroup(t *testing.T) {
 }
 
 func TestRTFToText(t *testing.T) {
-	content := `{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard Voici du texte en {\b gras}.\par}`
+	content := `{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard Voici du texte en {\b gras}.\par}{\*\themedata themedata}`
 
 	parser := NewRtfParser()
 	doc, _ := parser.ParseContent(content)
@@ -76,3 +77,58 @@ func TestRTFToText(t *testing.T) {
 		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", expected, text)
 	}
 }
+
+func TestRTFToHTML(t *testing.T) {
+	content := `{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}{\colortbl;\red0\green0\blue0;\red255\green255\blue255;}\f0\pard` + "\n"
+	content += `This is some {\b bold} text.\par` + "\n"
+	content += `}`
+
+	parser := NewRtfParser()
+	doc, err := parser.ParseContent(content)
+	if err != nil {
+		t.Error(err)
+	}
+
+	html, err := doc.ToHTML()
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := "This is some <bold>bold</bold> text."
+
+	if html != expected {
+		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", expected, html)
+	}
+}
+
+func TestParseFileMinimal(t *testing.T) {
+	parser := NewRtfParser()
+	doc, err := parser.ParseFile("./testfiles/minimal.rtf")
+	if err != nil {
+		t.Error(err)
+	}
+
+	txt, err := doc.ToText()
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := "this is a test file"
+
+	if txt != expected {
+		t.Errorf("\n\nexpected: %v\n\nactual\t: %v", expected, txt)
+	}
+}
+
+// func TestRTFFileToHTML(t *testing.T) {
+//     parser := NewRtfParser()
+//     doc, err := parser.ParseFile("./testfiles/ashish.rtf")
+//     if err != nil {
+//         t.Error(err)
+//     }
+
+//     _, err = doc.ToHTML()
+//     if err != nil {
+//         t.Error(err)
+//     }
+// }

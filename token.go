@@ -14,45 +14,160 @@ const (
 	tokenTypeText
 	tokenTypeControlWord
 	tokenTypeCRLF
-	tokenTypeIgnorableDestination
+	tokenTypeIgnorable
 )
 
 type controlWordType int
 
 const (
-	controlWordTypeRtf controlWordType = iota + 1
-	controlWordTypeAnsi
+	controlWordTypeUnknown controlWordType = iota
+
+	// prolog
+	controlWordTypeRtf
+
+	// character set
+	controlWordTypeCharacterSet
+
+	// font table
 	controlWordTypeFontTable
 	controlWordTypeFontNumber
 	controlWordTypeFontSize
-	controlWordTypeItalic
-	controlWordTypeBold
-	controlWordTypeUnderline
-	controlWordTypeUnknown
+	controlWordTypeFontFamily
+	controlWordTypeFontCharset
+	controlWordTypeFontAlternative
+	controlWordTypeFontPitch
+	controlWordTypeFontPanose
+	controlWordTypeFontName
+	controlWordTypeFontBias
+
+	// file table
+	controlWordTypeFileTable
+	controlWordTypeFile
+	controlWordTypeFileID
+	controlWordTypeFileRelative
+	controlWordTypeFileOSNumber
+	controlWordTypeFileValidMac
+	controlWordTypeFileValidDOS
+	controlWordTypeFileValidNTFS
+	controlWordTypeFileValidHPFS
+	controlWordTypeFileValidNetwork
+
+	// color table
 	controlWordTypeColorTable
 	controlWordTypeColorRed
 	controlWordTypeColorGreen
 	controlWordTypeColorBlue
+
+	// stylesheet
+	controlWordTypeStylesheet
+	controlWordTypeStyleCharacter
+	controlWordTypeStyleParagraph
+	controlWordTypeStyleSection
+	controlWordTypeStyleAdditive
+	controlWordTypeStyleBasedOn
+	controlWordTypeStyleNext
+	controlWordTypeStyleAutoUpdate
+	controlWordTypeStyleHidden
+	controlWordTypeStylePersonalEmail
+	controlWordTypeStyleEmailCompose
+	controlWordTypeStyleEmailReply
+	controlWordTypeStyleKeycode
+	controlWordTypeStyleAltModifierKey
+	controlWordTypeStyleShiftModifierKey
+	controlWordTypeStyleControlModifierKey
+	controlWordTypeStyleFunctionKey
+
+	// list table
+	controlWordTypeListTable
+	controlWordTypeList
+	controlWordTypeListID
+	controlWordTypeListTemplateID
+	controlWordTypeListSimple
+	controlWordTypeListHybrid
+	controlWordTypeListRestartSection
+	controlWordTypeListName
+	controlWordTypeListLevel
+	controlWordTypeListLevelStartAt
+	controlWordTypeListLevelNfc
+	controlWordTypeListLevelJc
+	controlWordTypeListLevelNfcn
+	controlWordTypeListLevelJcn
+	controlWordTypeListLevelOld
+	controlWordTypeListLevelPrev
+	controlWordTypeListPrevSpace
+	controlWordTypeListLevelIndent
+	controlWordTypeListLevelSpace
+	controlWordTypeListLevelText
+	controlWordTypeListLevelNumbers
+	controlWordTypeListLevelFollow
+	controlWordTypeListLevelNoRestart
+
+	// list override table
+	controlWordListOverrideTable
+	controlWordTypeListOverride
+	controlWordTypeListOverrideListID
+	controlWordTypeListOverrideCount
+	controlWordTypeListOverrideLs
+	controlWordTypeListOverrideLevel
+	controlWordTypeListOverrideLevelStartAt
+	controlWordTypeListOverrideLevelFormat
+
+	// information group
+	controlWordTypeInfo
+	controlWordTypeInfoTitle
+	controlWordTypeInfoSubject
+	controlWordTypeInfoAuthor
+	controlWordTypeInfoManager
+	controlWordTypeInfoCompany
+	controlWordTypeInfoOperator
+	controlWordTypeInfoCategory
+	controlWordTypeInfoKeywords
+	controlWordTypeInfoComment
+	controlWordTypeInfoVersion
+	controlWordTypeInfoDoccom
+	controlWordTypeInfoHlinkBase
+
+	// character formatting
+	controlWordTypeItalic
+	controlWordTypeBold
+	controlWordTypeUnderline
+	controlWordTypeSuperscript
+	controlWordTypeSubscript
+	controlWordTypeSmallcaps
+	controlWordTypeStrikethrough
 )
 
 func (c controlWordType) String() string {
 	switch c {
+	// prolog
 	case controlWordTypeRtf:
 		return "rtf"
-	case controlWordTypeAnsi:
-		return "ansi"
+
+	// character set
+	case controlWordTypeCharacterSet:
+		return "characterset"
+
+	// font table
 	case controlWordTypeFontTable:
 		return "fonttbl"
 	case controlWordTypeFontNumber:
 		return "f"
-	case controlWordTypeFontSize:
-		return "fs"
-	case controlWordTypeItalic:
-		return "i"
-	case controlWordTypeBold:
-		return "b"
-	case controlWordTypeUnderline:
-		return "i"
+	case controlWordTypeFontFamily:
+		return "fontfamily"
+	case controlWordTypeFontCharset:
+		return "fcharset"
+	case controlWordTypeFontPitch:
+		return "fprq"
+	case controlWordTypeFontPanose:
+		return "panose"
+	case controlWordTypeFontBias:
+		return "fbias"
+	case controlWordTypeFontName:
+		return "fname"
+	case controlWordTypeFontAlternative:
+		return "falt"
+
+	// color table
 	case controlWordTypeColorTable:
 		return "colortbl"
 	case controlWordTypeColorRed:
@@ -61,6 +176,87 @@ func (c controlWordType) String() string {
 		return "green"
 	case controlWordTypeColorBlue:
 		return "blue"
+
+	// stylesheet
+	case controlWordTypeStylesheet:
+		return "stylesheet"
+	case controlWordTypeStyleCharacter:
+		return "cs"
+	case controlWordTypeStyleParagraph:
+		return "s"
+	case controlWordTypeStyleSection:
+		return "ds"
+	case controlWordTypeStyleAdditive:
+		return "additive"
+	case controlWordTypeStyleBasedOn:
+		return "sbasedon"
+	case controlWordTypeStyleNext:
+		return "snext"
+	case controlWordTypeStyleAutoUpdate:
+		return "sautoupd"
+	case controlWordTypeStyleHidden:
+		return "shidden"
+	case controlWordTypeStylePersonalEmail:
+		return "spersonal"
+	case controlWordTypeStyleEmailCompose:
+		return "scompose"
+	case controlWordTypeStyleEmailReply:
+		return "sreply"
+	case controlWordTypeStyleKeycode:
+		return "keycode"
+	case controlWordTypeStyleAltModifierKey:
+		return "alt"
+	case controlWordTypeStyleShiftModifierKey:
+		return "shift"
+	case controlWordTypeStyleControlModifierKey:
+		return "ctrl"
+	case controlWordTypeStyleFunctionKey:
+		return "fn"
+
+	// information group
+	case controlWordTypeInfo:
+		return "info"
+	case controlWordTypeInfoTitle:
+		return "title"
+	case controlWordTypeInfoSubject:
+		return "subject"
+	case controlWordTypeInfoAuthor:
+		return "author"
+	case controlWordTypeInfoManager:
+		return "manager"
+	case controlWordTypeInfoCompany:
+		return "company"
+	case controlWordTypeInfoOperator:
+		return "operator"
+	case controlWordTypeInfoCategory:
+		return "category"
+	case controlWordTypeInfoKeywords:
+		return "keywords"
+	case controlWordTypeInfoComment:
+		return "comment"
+	case controlWordTypeInfoVersion:
+		return "version"
+	case controlWordTypeInfoDoccom:
+		return "doccom"
+	case controlWordTypeInfoHlinkBase:
+		return "hlinkbase"
+
+	// character formatting
+	case controlWordTypeItalic:
+		return "i"
+	case controlWordTypeBold:
+		return "b"
+	case controlWordTypeUnderline:
+		return "u"
+	case controlWordTypeSuperscript:
+		return "super"
+	case controlWordTypeSubscript:
+		return "sub"
+	case controlWordTypeSmallcaps:
+		return "scaps"
+	case controlWordTypeStrikethrough:
+		return "strike"
+
 	default:
 		return "unknown"
 	}
@@ -129,21 +325,6 @@ func newCrlfToken() crlfToken {
 	return crlfToken{}
 }
 
-type ignorableDestination struct {
-}
-
-func (i ignorableDestination) tokenType() tokenType {
-	return tokenTypeIgnorableDestination
-}
-
-func (i ignorableDestination) String() string {
-	return "{IgnorableDestination}"
-}
-
-func newIgnorableDestination() ignorableDestination {
-	return ignorableDestination{}
-}
-
 type controlWordToken struct {
 	name            string
 	controlWordType controlWordType
@@ -178,7 +359,7 @@ func newControlWordToken(input string) (controlWordToken, error) {
 		param = p
 	}
 
-	controlType := getControlTypeFromPrefix(prefix)
+	controlType := getControlWordTypeFromPrefix(prefix)
 
 	return controlWordToken{
 		name:            prefix,
@@ -199,24 +380,38 @@ func getSuffixIndex(text string) int {
 	return suffixIndex
 }
 
-func getControlTypeFromPrefix(prefix string) controlWordType {
+func getControlWordTypeFromPrefix(prefix string) controlWordType {
 	switch prefix {
+	// prolog
 	case `\rtf`:
 		return controlWordTypeRtf
-	case `\ansi`:
-		return controlWordTypeAnsi
+
+	// character set
+	case `\ansi`, `\mac`, `\pc`, `\pca`:
+		return controlWordTypeCharacterSet
+
+	// font table
 	case `\fonttbl`:
 		return controlWordTypeFontTable
 	case `\f`:
 		return controlWordTypeFontNumber
 	case `\fs`:
 		return controlWordTypeFontSize
-	case `\i`:
-		return controlWordTypeItalic
-	case `\b`:
-		return controlWordTypeBold
-	case `\u`:
-		return controlWordTypeUnderline
+	case `\fnil`, `\froman`, `\fswiss`, `\fmodern`, `\fscript`, `\fdecor`, `\ftech`, `\fbidi`:
+		return controlWordTypeFontFamily
+	case `\fcharset`:
+		return controlWordTypeFontCharset
+	case `\falt`:
+		return controlWordTypeFontAlternative
+	case `\fprq`:
+		return controlWordTypeFontPitch
+	case `\*\panose`:
+		return controlWordTypeFontPanose
+	case `\*\fname`:
+		return controlWordTypeFontName
+	case `\fbias`:
+		return controlWordTypeFontBias
+
 	case `\colortbl`:
 		return controlWordTypeColorTable
 	case `\red`:
@@ -225,6 +420,86 @@ func getControlTypeFromPrefix(prefix string) controlWordType {
 		return controlWordTypeColorGreen
 	case `\blue`:
 		return controlWordTypeColorBlue
+
+	case `\stylesheet`:
+		return controlWordTypeStylesheet
+	case `\*\cs`:
+		return controlWordTypeStyleCharacter
+	case `\s`:
+		return controlWordTypeStyleParagraph
+	case `\ds`:
+		return controlWordTypeStyleSection
+	case `\additive`:
+		return controlWordTypeStyleAdditive
+	case `\sbasedon`:
+		return controlWordTypeStyleBasedOn
+	case `\snext`:
+		return controlWordTypeStyleNext
+	case `\sautoupd`:
+		return controlWordTypeStyleAutoUpdate
+	case `\shidden`:
+		return controlWordTypeStyleHidden
+	case `\spersonal`:
+		return controlWordTypeStylePersonalEmail
+	case `\scompose`:
+		return controlWordTypeStyleEmailCompose
+	case `\sreply`:
+		return controlWordTypeStyleEmailReply
+	case `\keycode`:
+		return controlWordTypeStyleKeycode
+	case `\alt`:
+		return controlWordTypeStyleAltModifierKey
+	case `\shift`:
+		return controlWordTypeStyleShiftModifierKey
+	case `\ctrl`:
+		return controlWordTypeStyleControlModifierKey
+	case `\fn`:
+		return controlWordTypeStyleFunctionKey
+
+		// information group
+	case `\info`:
+		return controlWordTypeInfo
+	case `\title`:
+		return controlWordTypeInfoTitle
+	case `\subject`:
+		return controlWordTypeInfoSubject
+	case `\author`:
+		return controlWordTypeInfoAuthor
+	case `\manager`:
+		return controlWordTypeInfoManager
+	case `\company`:
+		return controlWordTypeInfoCompany
+	case `\operator`:
+		return controlWordTypeInfoOperator
+	case `\category`:
+		return controlWordTypeInfoCategory
+	case `\keywords`:
+		return controlWordTypeInfoKeywords
+	case `\comment`:
+		return controlWordTypeInfoComment
+	case `\version`:
+		return controlWordTypeInfoVersion
+	case `\doccom`:
+		return controlWordTypeInfoDoccom
+	case `\hlinkbase`:
+		return controlWordTypeInfoHlinkBase
+
+	// character formatting
+	case `\i`:
+		return controlWordTypeItalic
+	case `\b`:
+		return controlWordTypeBold
+	case `\u`:
+		return controlWordTypeUnderline
+	case `\super`:
+		return controlWordTypeSuperscript
+	case `\sub`:
+		return controlWordTypeSubscript
+	case `\scaps`:
+		return controlWordTypeSmallcaps
+	case `\strike`:
+		return controlWordTypeStrikethrough
+
 	default:
 		return controlWordTypeUnknown
 	}

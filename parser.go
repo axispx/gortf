@@ -7,7 +7,7 @@ import (
 )
 
 type Painter struct {
-	FontRef   FontRef
+	FontRef   TableRef
 	FontSize  int
 	Bold      bool
 	Italic    bool
@@ -25,44 +25,6 @@ type StyleBlock struct {
 
 func (s StyleBlock) String() string {
 	return fmt.Sprintf("StyleBlock: {Painter: {%v}, Text: %s}", s.Painter, s.Text)
-}
-
-type RtfDocument struct {
-	Header RtfHeader
-	Body   []StyleBlock
-}
-
-func (r RtfDocument) String() string {
-	return fmt.Sprintf("{Header: %v, Body: %v}", r.Header, r.Body)
-}
-
-func (r *RtfDocument) pushToBody(sb StyleBlock) {
-	r.Body = append(r.Body, sb)
-}
-
-func (r *RtfDocument) popFromBody() StyleBlock {
-	if len(r.Body) == 0 {
-		panic("too many group endings")
-	}
-
-	index := len(r.Body) - 1
-	element := r.Body[index]
-	r.Body = r.Body[:index]
-
-	return element
-}
-
-func (r *RtfDocument) ToText() (string, error) {
-	var sb strings.Builder
-
-	for _, b := range r.Body {
-		_, err := sb.WriteString(b.Text)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	return sb.String(), nil
 }
 
 type RtfParser struct {
@@ -109,6 +71,7 @@ func (r *RtfParser) ParseContent(content string) (RtfDocument, error) {
 func (r *RtfParser) parse() (RtfDocument, error) {
 	doc := RtfDocument{}
 	doc.Header = r.parseHeader()
+	doc.InformationGroup = r.parseInformationGroup()
 
 	r.pushPainter(Painter{})
 	for _, tkn := range r.tokens {
@@ -125,7 +88,7 @@ func (r *RtfParser) parse() (RtfDocument, error) {
 
 			switch controlWord.controlWordType {
 			case controlWordTypeFontNumber:
-				currentPainter.FontRef = FontRef(controlWord.parameter)
+				currentPainter.FontRef = TableRef(controlWord.parameter)
 			case controlWordTypeBold:
 				currentPainter.Bold = true
 			case controlWordTypeItalic:
@@ -169,6 +132,10 @@ func (r *RtfParser) parseHeader() RtfHeader {
 				headerTableFound = true
 				colorTableTokens := r.consumeTokensUntilMatchingBracket()
 				header.ColorTable = r.parseColorTable(colorTableTokens)
+			} else if controlWord.controlWordType == controlWordTypeStylesheet {
+				headerTableFound = true
+				stylesheetTokens := r.consumeTokensUntilMatchingBracket()
+				header.Stylesheet = r.parseStylesheet(stylesheetTokens)
 			}
 
 			if headerTableFound {
@@ -197,8 +164,8 @@ func (r *RtfParser) parseHeader() RtfHeader {
 
 func (r *RtfParser) parseFontTable(fontTableTokens []token) FontTable {
 	table := make(FontTable)
-	var currentKey FontRef = 0
-	currentFont := Font{FontFamily: FontFamilyNil}
+	var currentKey TableRef = 0
+	currentFont := Font{}
 
 	for _, tkn := range fontTableTokens {
 		switch tkn.tokenType() {
@@ -208,12 +175,11 @@ func (r *RtfParser) parseFontTable(fontTableTokens []token) FontTable {
 			switch controlWord.controlWordType {
 			case controlWordTypeFontNumber:
 				table[currentKey] = currentFont
-				currentKey = FontRef(controlWord.parameter)
-			case controlWordTypeUnknown:
-				fontFamily := fontFamilyFromName(controlWord.name)
-				if fontFamily != FontFamilyNone {
-					currentFont.FontFamily = fontFamily
-				}
+				currentKey = TableRef(controlWord.parameter)
+
+			case controlWordTypeFontFamily:
+				fontFamily := fontFamilyFromToken(tkn)
+				currentFont.FontFamily = fontFamily
 			}
 		case tokenTypeText:
 			tt := tkn.(textToken)
@@ -228,7 +194,7 @@ func (r *RtfParser) parseFontTable(fontTableTokens []token) FontTable {
 
 func (r *RtfParser) parseColorTable(colorTableTokens []token) ColorTable {
 	table := make(ColorTable)
-	var currentKey ColorRef = 1
+	var currentKey TableRef = 1
 	var currentColor = Color{-1, -1, -1}
 
 	for _, tkn := range colorTableTokens {
@@ -256,6 +222,22 @@ func (r *RtfParser) parseColorTable(colorTableTokens []token) ColorTable {
 	return table
 }
 
+func (r *RtfParser) parseStylesheet(stylesheetTokens []token) Stylesheet {
+	stylesheet := make(Stylesheet)
+
+	currentStyle := Style{}
+
+	for _, tkn := range stylesheetTokens {
+		switch tkn.tokenType() {
+		case tokenTypeText:
+			tt := tkn.(textToken)
+			currentStyle.Name = strings.TrimSuffix(tt.value, ";")
+		}
+	}
+
+	return stylesheet
+}
+
 func (r *RtfParser) areMoreHeaderTablePresent() bool {
 	nextToken := r.peek()
 	nextToNextToken := r.peekN(1)
@@ -272,6 +254,80 @@ func (r *RtfParser) areMoreHeaderTablePresent() bool {
 	}
 
 	return false
+}
+
+func (r *RtfParser) parseInformationGroup() RtfInformationGroup {
+	r.cursor = 0
+
+	// don't use advance here because we don't know if there is an information group yet
+	currentToken := r.peek()
+	nextToken := r.peekN(1)
+
+	if currentToken == nil || nextToken == nil {
+		return RtfInformationGroup{}
+	}
+
+	if currentToken.tokenType() == tokenTypeGroup && nextToken.tokenType() == tokenTypeControlWord {
+		controlWord := nextToken.(controlWordToken)
+
+		if controlWord.controlWordType != controlWordTypeInfo {
+			return RtfInformationGroup{}
+		}
+
+		// advance into the information group
+		r.advance()
+	} else {
+		return RtfInformationGroup{}
+	}
+
+	informationGroup := RtfInformationGroup{}
+	for !r.isAtEnd() {
+		currentToken := r.advance()
+		nextToken := r.peek()
+
+		if currentToken.tokenType() == tokenTypeGroup && nextToken.tokenType() == tokenTypeControlWord {
+			controlWord := nextToken.(controlWordToken)
+			tokens := r.consumeTokensUntilMatchingBracket()
+
+			if controlWord.controlWordType == controlWordTypeInfoVersion {
+				informationGroup.Version = controlWord.parameter
+			} else if len(tokens) == 3 {
+				textToken := tokens[1].(textToken)
+
+				switch controlWord.controlWordType {
+				case controlWordTypeInfoTitle:
+					informationGroup.Title = textToken.value
+				case controlWordTypeInfoSubject:
+					informationGroup.Subject = textToken.value
+				case controlWordTypeInfoAuthor:
+					informationGroup.Author = textToken.value
+				case controlWordTypeInfoManager:
+					informationGroup.Manager = textToken.value
+				case controlWordTypeInfoCompany:
+					informationGroup.Company = textToken.value
+				case controlWordTypeInfoOperator:
+					informationGroup.Operator = textToken.value
+				case controlWordTypeInfoCategory:
+					informationGroup.Category = textToken.value
+				case controlWordTypeInfoKeywords:
+					informationGroup.Keywords = textToken.value
+				case controlWordTypeInfoComment:
+					informationGroup.Comment = textToken.value
+				case controlWordTypeInfoDoccom:
+					informationGroup.DocumentComment = textToken.value
+				case controlWordTypeInfoHlinkBase:
+					informationGroup.BaseAddress = textToken.value
+				}
+			}
+
+		}
+
+		if currentToken.tokenType() == tokenTypeGroupEnd {
+			break
+		}
+	}
+
+	return informationGroup
 }
 
 func (r *RtfParser) consumeTokensUntilMatchingBracket() []token {
@@ -310,6 +366,14 @@ func (r *RtfParser) advance() token {
 	r.tokens = append(r.tokens[:r.cursor], r.tokens[r.cursor+1:]...)
 
 	return t
+}
+
+func (r *RtfParser) advanceN(n int) {
+	if len(r.tokens) < n {
+		panic(fmt.Sprintf("only %d tokens left", len(r.tokens)))
+	}
+
+	r.tokens = r.tokens[r.cursor+n:]
 }
 
 func (r *RtfParser) peek() token {
@@ -368,4 +432,8 @@ func (r *RtfParser) lastPainter() *Painter {
 	}
 
 	return r.painterStack[topIndex]
+}
+
+func (r *RtfParser) readInformationGroup() {
+
 }

@@ -1,6 +1,8 @@
 package gortf
 
-import "strings"
+import (
+	"strings"
+)
 
 type scanner struct {
 	start   int
@@ -39,7 +41,8 @@ func (s *scanner) scanToken() {
 		s.addToken(newGroupEndToken())
 
 	case '*':
-		s.addToken(newIgnorableDestination())
+		// TODO: handle known ignorables
+		s.ignoreCurrentGroup()
 
 	case '\\':
 		pc := s.peek()
@@ -75,7 +78,7 @@ func (s *scanner) scanToken() {
 
 			s.addToken(cwt)
 
-			if len(tail) > 0 {
+			if strings.TrimSpace(tail) != "" {
 				s.addToken(newTextToken(tail))
 			}
 		}
@@ -86,7 +89,7 @@ func (s *scanner) scanToken() {
 		}
 		slice := s.source[s.start:s.current]
 
-		if slice != "" {
+		if strings.TrimSpace(slice) != "" {
 			s.addToken(newTextToken(slice))
 		}
 	}
@@ -94,6 +97,14 @@ func (s *scanner) scanToken() {
 
 func (s *scanner) addToken(token token) {
 	s.tokens = append(s.tokens, token)
+}
+
+func (s *scanner) popToken() token {
+	index := len(s.tokens) - 1
+	tkn := s.tokens[index]
+	s.tokens = s.tokens[:index]
+
+	return tkn
 }
 
 func (s *scanner) peek() byte {
@@ -122,4 +133,24 @@ func (s *scanner) advance() byte {
 	s.current += 1
 
 	return currentChar
+}
+
+func (s *scanner) ignoreCurrentGroup() {
+	s.popToken()
+
+	count := 0
+
+	for !s.isAtEnd() {
+		currentChar := s.advance()
+		switch currentChar {
+		case '{':
+			count += 1
+		case '}':
+			count -= 1
+		}
+
+		if count < 0 {
+			break
+		}
+	}
 }

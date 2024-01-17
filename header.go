@@ -2,7 +2,6 @@ package gortf
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Font struct {
@@ -42,10 +41,15 @@ func characterSetFromToken(tkn token) CharacterSet {
 	if tkn.tokenType() == tokenTypeControlWord {
 		controlWord := tkn.(controlWordToken)
 
-		// TODO: implement the rest
-		switch controlWord.controlWordType {
-		case controlWordTypeAnsi:
+		switch controlWord.name {
+		case `\ansi`:
 			return CharacterSetAnsi
+		case `\mac`:
+			return CharacterSetMac
+		case `\pc`:
+			return CharacterSetPc
+		case `\pca`:
+			return CharacterSetPca
 		}
 	}
 
@@ -55,8 +59,7 @@ func characterSetFromToken(tkn token) CharacterSet {
 type FontFamily int
 
 const (
-	FontFamilyNone FontFamily = iota
-	FontFamilyNil
+	FontFamilyNil FontFamily = iota
 	FontFamilyRoman
 	FontFamilySwiss
 	FontFamilyModern
@@ -68,8 +71,6 @@ const (
 
 func (f FontFamily) String() string {
 	switch f {
-	case FontFamilyNone:
-		return "None"
 	case FontFamilyNil:
 		return "Nil"
 	case FontFamilyRoman:
@@ -87,21 +88,35 @@ func (f FontFamily) String() string {
 	case FontFamilyBidi:
 		return "Bidi"
 	default:
-		return "Unknown"
+		return "Nil"
 	}
 }
 
-func fontFamilyFromName(name string) FontFamily {
-	switch {
-	case strings.HasPrefix(name, `\fnil`):
-		return FontFamilyNil
-	case strings.HasPrefix(name, `\froman`):
-		return FontFamilyRoman
-	case strings.HasPrefix(name, `\fswiss`):
-		return FontFamilySwiss
-	default:
-		return FontFamilyNone
+func fontFamilyFromToken(tkn token) FontFamily {
+	if tkn.tokenType() == tokenTypeControlWord {
+		controlWord := tkn.(controlWordToken)
+
+		switch controlWord.name {
+		case `\fnil`:
+			return FontFamilyNil
+		case `\froman`:
+			return FontFamilyRoman
+		case `\fswiss`:
+			return FontFamilySwiss
+		case `\fmodern`:
+			return FontFamilyModern
+		case `\fscript`:
+			return FontFamilyScript
+		case `\fdecor`:
+			return FontFamilyDecor
+		case `\ftech`:
+			return FontFamilyTech
+		case `\fbidi`:
+			return FontFamilyBidi
+		}
 	}
+
+	return FontFamilyNil
 }
 
 type Color struct {
@@ -114,16 +129,22 @@ func (c Color) valid() bool {
 	return c.R >= 0 && c.G >= 0 && c.B >= 0
 }
 
-type FontRef uint16
-type FontTable map[FontRef]Font
+type Style struct {
+	Name   string
+	Number int
+}
 
-type ColorRef uint16
-type ColorTable map[ColorRef]Color
+type TableRef uint16
+
+type FontTable map[TableRef]Font
+type ColorTable map[TableRef]Color
+type Stylesheet map[string]Style
 
 type RtfHeader struct {
 	Charset    CharacterSet
 	FontTable  FontTable
 	ColorTable ColorTable
+	Stylesheet Stylesheet
 }
 
 func (r RtfHeader) String() string {
