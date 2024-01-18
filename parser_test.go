@@ -1,6 +1,7 @@
 package gortf
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -120,15 +121,17 @@ func TestParseFileMinimal(t *testing.T) {
 	}
 }
 
-// func TestRTFFileToHTML(t *testing.T) {
-//     parser := NewRtfParser()
-//     doc, err := parser.ParseFile("./testfiles/ashish.rtf")
-//     if err != nil {
-//         t.Error(err)
-//     }
+func TestRTFToHTMLMinimal(t *testing.T) {
+	parser := NewRtfParser()
+	doc, err := parser.ParseFile("./testfiles/minimal.rtf")
+	if err != nil {
+		t.Error(err)
+	}
 
-//     _, err = doc.ToHTML()
-//     if err != nil {
-//         t.Error(err)
-//     }
-// }
+	html, err := doc.ToHTML()
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println(html)
+}

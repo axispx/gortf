@@ -78,7 +78,8 @@ func (s *scanner) scanToken() {
 
 			s.addToken(cwt)
 
-			if strings.TrimSpace(tail) != "" {
+			tail = strings.Trim(tail, "\n")
+			if tail != "" {
 				s.addToken(newTextToken(tail))
 			}
 		}
@@ -87,9 +88,9 @@ func (s *scanner) scanToken() {
 		for s.peek() != '\\' && s.peek() != '{' && s.peek() != '}' {
 			s.advance()
 		}
-		slice := s.source[s.start:s.current]
+		slice := strings.Trim(s.source[s.start:s.current], "\n")
 
-		if strings.TrimSpace(slice) != "" {
+		if slice != "" {
 			s.addToken(newTextToken(slice))
 		}
 	}

@@ -1,7 +1,7 @@
 package gortf
 
 import (
-	"fmt"
+	"encoding/json"
 )
 
 type Font struct {
@@ -148,5 +148,6 @@ type RtfHeader struct {
 }
 
 func (r RtfHeader) String() string {
-	return fmt.Sprintf("{Charset: %s, FontTable: %v, ColorTable: %v}", r.Charset, r.FontTable, r.ColorTable)
+	b, _ := json.Marshal(r)
+	return string(b)
 }

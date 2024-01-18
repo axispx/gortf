@@ -1,6 +1,7 @@
 package gortf
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -131,6 +132,7 @@ const (
 	controlWordTypeItalic
 	controlWordTypeBold
 	controlWordTypeUnderline
+	controlWordTypeUnderlineNone
 	controlWordTypeSuperscript
 	controlWordTypeSubscript
 	controlWordTypeSmallcaps
@@ -247,7 +249,9 @@ func (c controlWordType) String() string {
 	case controlWordTypeBold:
 		return "b"
 	case controlWordTypeUnderline:
-		return "u"
+		return "ul"
+	case controlWordTypeUnderlineNone:
+		return "ulnone"
 	case controlWordTypeSuperscript:
 		return "super"
 	case controlWordTypeSubscript:
@@ -336,7 +340,8 @@ func (c controlWordToken) tokenType() tokenType {
 }
 
 func (c controlWordToken) String() string {
-	return fmt.Sprintf("{ControlWord %s %s %d}", c.name, c.controlWordType, c.parameter)
+	b, _ := json.Marshal(c)
+	return string(b)
 }
 
 func newControlWordToken(input string) (controlWordToken, error) {
@@ -489,8 +494,10 @@ func getControlWordTypeFromPrefix(prefix string) controlWordType {
 		return controlWordTypeItalic
 	case `\b`:
 		return controlWordTypeBold
-	case `\u`:
+	case `\ul`:
 		return controlWordTypeUnderline
+	case `\ulnone`:
+		return controlWordTypeUnderlineNone
 	case `\super`:
 		return controlWordTypeSuperscript
 	case `\sub`:

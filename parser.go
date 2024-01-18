@@ -1,6 +1,7 @@
 package gortf
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -15,7 +16,8 @@ type Painter struct {
 }
 
 func (p Painter) String() string {
-	return fmt.Sprintf("Painter: {fr: %d, fs: %d, b: %v, i: %v, u: %v}", p.FontRef, p.FontSize, p.Bold, p.Italic, p.Underline)
+	b, _ := json.Marshal(p)
+	return string(b)
 }
 
 type StyleBlock struct {
@@ -24,7 +26,8 @@ type StyleBlock struct {
 }
 
 func (s StyleBlock) String() string {
-	return fmt.Sprintf("StyleBlock: {Painter: {%v}, Text: %s}", s.Painter, s.Text)
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 type RtfParser struct {
@@ -90,11 +93,13 @@ func (r *RtfParser) parse() (RtfDocument, error) {
 			case controlWordTypeFontNumber:
 				currentPainter.FontRef = TableRef(controlWord.parameter)
 			case controlWordTypeBold:
-				currentPainter.Bold = true
+				currentPainter.Bold = controlWord.parameter != 0
 			case controlWordTypeItalic:
-				currentPainter.Italic = true
+				currentPainter.Italic = controlWord.parameter != 0
 			case controlWordTypeUnderline:
-				currentPainter.Underline = true
+				currentPainter.Underline = controlWord.parameter != 0
+			case controlWordTypeUnderlineNone:
+				currentPainter.Underline = false
 			}
 
 		case tokenTypeText:
